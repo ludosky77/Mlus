@@ -73,10 +73,9 @@ On an approved Linux build host, use JDK 17, Android SDK platform 36 and build t
 ./gradlew --no-daemon :app:lintDebug :app:assembleDebug
 ```
 
-A manually triggered GitHub Actions workflow is prepared locally at
-`.github/workflows/android.yml`. Publication is pending because the supplied PAT
-lacks GitHub’s required `workflow` scope. Once published, it verifies the Node
-code before building and uploads the debug APK and lint reports.
+The manually triggered GitHub Actions workflow in `.github/workflows/android.yml`
+verifies the Node code before building the Android client and uploading the debug
+APK and lint reports. Android compilation runs on GitHub’s Linux runner.
 The user selected [ludosky77/Mlus](https://github.com/ludosky77/Mlus) for this source
 and its GitHub Actions builds. Build results are available in the repository’s
 Actions tab; workflow preparation alone does not establish a successful build.

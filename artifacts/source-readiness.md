@@ -14,10 +14,9 @@ Implemented:
   preserved in experiments/html-runtime/.
 - Manual GitHub Actions build workflow prepared; the user selected
   https://github.com/ludosky77/Mlus.git for publication and the first remote build.
-  App source publication is authorized. GitHub rejected workflow publication
-  because the supplied PAT lacks the required `workflow` scope. The workflow
-  remains local until that permission is available. Execution-host deployment
-  remains outstanding.
+  App source publication and remote builds are authorized. The current token is
+  fine-grained; workflow publication is being retried with the updated permissions.
+  Execution-host deployment remains outstanding.
 
 Verified locally without Android tools:
 

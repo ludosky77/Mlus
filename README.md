@@ -21,8 +21,11 @@ Android installation remains the authoritative package/signature check.
 The APK import, room upload, Android worker adapter, binary video protocol and
 native viewing/control source are implemented. Node tests exercise real HTTP and
 WebSocket connections with an injected fake Android worker. Protocol tests check
-scrcpy frame parsing and touch routing. **No real APK execution or native Android
-build has been validated for this implementation. No installable APK is available.**
+scrcpy frame parsing and touch routing. The [GitHub Actions build](https://github.com/ludosky77/Mlus/actions/runs/37243718508)
+passed all 14 Node tests, Kotlin compilation, Android lint and debug APK assembly.
+[Download the APK and lint reports](https://github.com/ludosky77/Mlus/actions/runs/37243718508/artifacts/11318661450).
+The artifact expires seven days after this build; the workflow can produce another.
+**Physical-device behavior and real APK execution on the remote host remain unverified.**
 
 The earlier HTML prototype remains in `public/` and `experiments/html-runtime/`
 for reference. It is excluded from the Android application's assets and dependencies.

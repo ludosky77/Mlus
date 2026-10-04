@@ -1,6 +1,7 @@
-# APK bridge source status
+# APK bridge build and source status
 
-Date: 2026-10-04. This is a source progress report, not an app completion report.
+Date: 2026-10-04. The first native debug APK builds successfully; runtime and device
+validation are still outstanding.
 
 Implemented:
 
@@ -12,10 +13,9 @@ Implemented:
 - Native H.264 decoding and normalized multi-touch with separate player pointer IDs.
 - HTML assets and WebKit dependency removed from the Android app; previous assets
   preserved in experiments/html-runtime/.
-- Manual GitHub Actions build workflow prepared; the user selected
-  https://github.com/ludosky77/Mlus.git for publication and the first remote build.
-  App source publication and remote builds are authorized. The current token is
-  fine-grained; workflow publication is being retried with the updated permissions.
+- Source and manual GitHub Actions workflow published to
+  https://github.com/ludosky77/Mlus. SDK setup explicitly selects platform-tools
+  because the setup action’s default legacy tools package is no longer available.
   Execution-host deployment remains outstanding.
 
 Verified locally without Android tools:
@@ -29,10 +29,20 @@ Verified locally without Android tools:
 - Execution tests use a fake Android worker. Protocol tests use constructed packets.
   They do not execute an APK, ADB, Gradle, an emulator or a native decoder.
 
+Verified on GitHub’s Ubuntu runner:
+
+- [Run 37243718508](https://github.com/ludosky77/Mlus/actions/runs/37243718508) passed
+  at source commit `8a09f1407d436e401c22d5d60e8fecacda74f7f9`.
+- All 14 Node tests, Kotlin compilation, `:app:lintDebug` and `:app:assembleDebug`.
+- Lint reported no errors, 12 warnings and one hint. Warnings cover dependency/API
+  updates, style and optional Android configuration; they are not suppressed.
+- The debug APK was downloaded to `artifacts/bridge-debug.apk` (18,763,295 bytes).
+  The artifact SHA-256 matches GitHub’s digest, and the APK ZIP structure passes
+  integrity checks. See `build-result.json` for provenance and the APK checksum.
+- No Android build or installation ran on this phone during this work.
+
 Outstanding:
 
-- Remote Gradle build and lint; no APK has been produced. No Android build is running
-  on this phone. The previously attempted local build failed before this implementation.
 - Actual execution-host deployment and end-to-end testing with real APKs and phones.
 - Native layout review and user approval of the design.
 - Audio, split packages, controller mapping, clean emulator provisioning, production

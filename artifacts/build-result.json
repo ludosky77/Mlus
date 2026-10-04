@@ -1,0 +1,20 @@
+{
+  "source_commit": "8a09f1407d436e401c22d5d60e8fecacda74f7f9",
+  "run_url": "https://github.com/ludosky77/Mlus/actions/runs/37243718508",
+  "artifact_url": "https://github.com/ludosky77/Mlus/actions/runs/37243718508/artifacts/11318661450",
+  "apk_name": "bridge-debug.apk",
+  "apk_bytes": 18763295,
+  "apk_sha256": "a289ba5badcf319f8a33222d6cb65ef5799122a3550be2a66dad0269c453d666",
+  "artifact_sha256": "f495044c5055b65b25e60797c4ecd434e84a0799d963a65a392e6c60f7b63e86",
+  "lint_findings": {
+    "Hint": 1,
+    "Warning": 12
+  },
+  "node_tests_passed": 14,
+  "android_tasks": [
+    ":app:lintDebug",
+    ":app:assembleDebug"
+  ],
+  "physical_device_tested": false,
+  "execution_host_tested": false
+}

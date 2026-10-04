@@ -3,8 +3,9 @@
 - Build the Android product in Kotlin and Jetpack Compose. Game video uses the
   native MediaCodec/SurfaceView path; do not substitute a browser app or HTML game.
 - The user rejected the earlier browser UI. Keep the native design compact and
-  rectangular, with consistent icons and clear typography. Design approval and
-  native device review remain outstanding.
+  rectangular, with consistent icons and clear typography. The user likes the
+  rectangular visual direction; improve screen order and feature discoverability.
+  Review of the revised screens remains outstanding.
 - The target is a general Android APK bridge. Inspect package requirements and
   launch activities automatically. Do not require a named game or maintain a
   hard-coded game catalog as the product's compatibility strategy.

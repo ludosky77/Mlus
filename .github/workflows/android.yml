@@ -37,6 +37,11 @@ jobs:
           log-accepted-android-sdk-licenses: false
       - name: Install Android SDK components
         run: sdkmanager 'platforms;android-36' 'build-tools;35.0.0'
+      - name: Keep the development signing key across builds
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.android/debug.keystore
+          key: bridge-debug-signing-v1
       - name: Lint and build native debug APK
         working-directory: android
         run: ./gradlew --no-daemon :app:lintDebug :app:assembleDebug

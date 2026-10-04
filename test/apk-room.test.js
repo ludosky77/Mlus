@@ -132,3 +132,16 @@ test('a restarted video stream gets a new identity and requires a fresh subscrip
   host.send({ type: 'video-subscribe' }); await host.sync();
   runtime.emit({ type: 'frame', frame: video(2, 0x65) }); assert.equal((await host.next('video')).bytes[9], 0x65);
 });
+
+test('room upload preserves installed package-set format and rejects unknown formats', async t => {
+  const runtime = fakeHost(); const original = runtime.start;
+  runtime.start = async (file, emit, signal, options) => { runtime.options = options; return original(file, emit, signal); };
+  const { connect, upload } = await setup(t, { androidHost: runtime }); const host = await connect();
+  host.send({ type: 'create', name: 'Host', game: { kind: 'apk', title: 'Installed app', sha256, format: 'unknown' } });
+  assert.match((await host.next('error')).message, /Unsupported package format/);
+  host.send({ type: 'create', name: 'Host', game: { kind: 'apk', title: 'Installed app', sha256, format: 'apk-set' } });
+  const created = await host.next('joined'); assert.equal(created.room.game.format, 'apk-set');
+  assert.equal((await upload(created.room.code, created.uploadToken)).status, 202);
+  await host.next('room', p => p.room.runtime?.state === 'streaming');
+  assert.deepEqual(runtime.options, { format: 'apk-set' });
+});

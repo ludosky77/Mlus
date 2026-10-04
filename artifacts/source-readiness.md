@@ -45,8 +45,19 @@ Outstanding:
 
 - Actual execution-host deployment and end-to-end testing with real APKs and phones.
 - Native layout review and user approval of the design.
-- Audio, split packages, controller mapping, clean emulator provisioning, production
+- Audio, external asset packs, controller mapping, clean emulator provisioning, production
   isolation, accounts, ads, latency/cost measurement and production distribution.
 
 Compatibility is requirement-based, not tied to named games. Shared execution cannot
 create multiplayer game logic that an application does not already contain.
+
+Version 0.2 source changes:
+
+- Play / Library / Settings navigation; visible Host and Join actions; actionable
+  offline state; native installed-app picker with real app icons and search.
+- Launcher-intent package visibility, with no QUERY_ALL_PACKAGES or storage permission.
+- Direct base/split extraction, import progress and cancellation, package details,
+  private-copy deletion, package-update detection and atomic library commits.
+- Host-side split-set extraction and install-multiple support, validated by 19 Node
+  tests. APK signatures are still validated by Android at installation time.
+- New Android build and physical-device import review are pending for this revision.

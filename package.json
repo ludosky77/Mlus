@@ -11,10 +11,11 @@
     "test": "node --test test/*.test.js",
     "test:browser": "playwright test",
     "test:runtime": "playwright test test/browser/native-runtime.spec.js",
-    "check": "node --check server.js && node --check runtime/protocol.js && node --check runtime/android-host.js && node --check public/app.js && node --check public/runtime.js && node --check experiments/html-runtime/assets/game.js"
+    "check": "node --check server.js && node --check runtime/packages.js && node --check runtime/protocol.js && node --check runtime/android-host.js && node --check public/app.js && node --check public/runtime.js && node --check experiments/html-runtime/assets/game.js"
   },
   "dependencies": {
-    "ws": "8.22.0"
+    "ws": "8.22.0",
+    "yauzl": "3.4.0"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0"

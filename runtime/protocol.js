@@ -64,11 +64,14 @@ export class TouchRouter {
   expire() { for (const [slot, player] of this.players) if (this.clock() - player.at > 1000) this.release(slot); }
 }
 
-export function inspectBadging(text) {
+export function inspectBadging(text, { allowSplit = false } = {}) {
   const packageName = text.match(/^package: name='([^']+)'/m)?.[1];
   if (!packageName || !/^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+$/.test(packageName)) throw new Error('Invalid APK package name.');
   const minSdk = Number(text.match(/^sdkVersion:'(\d+)'/m)?.[1] ?? 1);
   const abis = [...(text.match(/^native-code:(.*)$/m)?.[1] ?? '').matchAll(/'([^']+)'/g)].map(match => match[1]);
-  if (/^package:.*\bsplit='/m.test(text)) throw new Error('Split APKs require a package set and are not supported by this adapter yet.');
-  return { packageName, minSdk, abis };
+  const packageLine = text.match(/^package:.*$/m)?.[0] ?? '';
+  const split = packageLine.match(/\bsplit='([^']+)'/)?.[1] ?? null;
+  if (split && !allowSplit) throw new Error('Split APKs require a complete package set.');
+  const versionCode = packageLine.match(/\bversionCode='([^']+)'/)?.[1] ?? '';
+  return { packageName, minSdk, abis, ...(allowSplit ? { split, versionCode } : {}) };
 }

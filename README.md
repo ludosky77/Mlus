@@ -4,19 +4,27 @@ An Android APK-sharing application under development. The client is Kotlin and
 Jetpack Compose, with a native video decoder, rooms and text-only chat. `Bridge`
 is the current working name.
 
-The current implementation imports an APK, reads its package requirements and
-signing certificate metadata, and uploads it when its owner creates a room. A
+The native library lists installed launchable apps using Android package visibility.
+Selecting an app copies its base APK and all installed split APKs, reads package
+requirements and signing metadata, and saves a private library copy. A standalone
+APK file can also be imported. Upload happens when the owner creates a room. A
 configured disposable Android emulator installs and launches the app. Both room
 members view the same Android session and send touch controls to it, with distinct
 pointer IDs for each player. There is no game-name allowlist.
 
 This shares the application's existing controls. It does not add a second avatar,
 independent game state or multiplayer rules to a single-player application. SDK,
-ABI, emulator restrictions, copy protection and missing split packages can prevent
+ABI, emulator restrictions, copy protection and missing external game assets can prevent
 an APK from running. Reading certificate metadata is not a malware assessment;
 Android installation remains the authoritative package/signature check.
 
 ## Status
+
+Version 0.2 reorganizes the native interface into Play, Library and Settings, adds
+the installed-app picker, import progress/cancellation, app details and library-copy
+removal. The local server suite now contains 19 passing tests, including split
+archive extraction and package consistency. Device import behavior still needs
+validation on a physical phone.
 
 The APK import, room upload, Android worker adapter, binary video protocol and
 native viewing/control source are implemented. Node tests exercise real HTTP and
@@ -61,8 +69,10 @@ reused with the previous user's application or data.
 
 The first video transport is H.264 over WebSocket, capped at 1280 pixels, 30 fps
 and a requested 4 Mbps. Real latency, bandwidth and decoder behavior need device
-measurement. Audio, controller mapping, split APK installation, automatic clean
-emulator provisioning, accounts, ads and production deployment remain unfinished.
+measurement. The worker supports base-plus-split installation with package/version checks. Device
+exports contain the splits installed for that phone; they cannot supply a different
+CPU architecture or downloaded asset packs. Audio, controller mapping, automatic
+clean emulator provisioning, accounts, ads and production deployment remain unfinished.
 
 ## Build the Android client remotely
 

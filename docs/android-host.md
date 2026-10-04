@@ -6,12 +6,17 @@ endpoint did not complete its handshake; no execution host has been deployed.
 
 ## Architecture
 
-1. The native client copies a selected APK into its private library and reads
+1. The native client copies a selected installed app (base APK plus installed
+   splits), or a standalone APK file, into its private library and reads
    package ID, version, minimum/target API, native ABIs and signing metadata.
 2. Creating a room uploads that APK with the room owner's upload token. The server
    enforces the 512 MiB limit and checks the SHA-256 supplied during room creation.
 3. The worker checks the package using `aapt dump badging`, compares API/ABI
-   requirements with the explicitly configured emulator, and installs the APK.
+   requirements with the explicitly configured emulator, and installs the package.
+   Installed app exports are bounded ZIP files containing base.apk and split-N.apk.
+   The worker rejects path traversal, symlinks, duplicate entries, oversized
+   extraction and splits from different packages/versions, then uses install-multiple.
+   Android validates the installation and signing consistency.
 4. Android's package manager resolves the launcher activity without a game-specific
    adapter. The worker starts it and the scrcpy 4.0 capture/control server.
 5. H.264 frames go to subscribed room members over WebSocket. Each native client

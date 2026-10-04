@@ -92,7 +92,7 @@ export function createApplication({ idleMs = 30 * 60_000, maxRooms = 500, iceSer
         if (hash.digest('hex') !== room.game.sha256) throw new Error('APK checksum does not match the imported package.');
         room.abort.signal.throwIfAborted();
         res.writeHead(202, { 'Content-Type': 'application/json' }); res.end('{"accepted":true}');
-        const job = androidHost.start(file, event => runtimeEvent(room, event), room.abort.signal)
+        const job = androidHost.start(file, event => runtimeEvent(room, event), room.abort.signal, { format: room.game.format })
           .then(async worker => { if (room.abort.signal.aborted) await worker.close(); else room.worker = worker; })
           .catch(error => runtimeEvent(room, { type: 'error', message: error.message }))
           .finally(async () => { room.uploading = false; await rm(directory, { recursive: true, force: true }); pendingJobs.delete(job); });
@@ -147,13 +147,14 @@ export function createApplication({ idleMs = 30 * 60_000, maxRooms = 500, iceSer
           if (!androidHost.capabilities().enabled || !androidHost.capabilities().available) { error(socket, 'The room server has no available Android execution host.'); return; }
           const waiting = [...rooms.values()].filter(room => room.game.kind === 'apk' && !room.worker && room.runtime?.state !== 'failed').length;
           if (waiting >= androidHost.capabilities().available) { error(socket, 'The Android hosts are reserved by other rooms. Try again shortly.'); return; }
+          if (!['apk', 'apk-set'].includes(message.game.format ?? 'apk')) { error(socket, 'Unsupported package format.'); return; }
           if (!/^[a-f0-9]{64}$/.test(message.game.sha256 ?? '')) { error(socket, 'An imported APK checksum is required.'); return; }
         }
         let code;
         do { code = [...randomBytes(6)].map(n => alphabet[n % alphabet.length]).join(''); } while (rooms.has(code));
         player.name = name; player.role = 'host'; player.room = code;
         const kind = ['apk', 'import'].includes(message.game.kind) ? message.game.kind : 'demo';
-        const room = { code, game: { title, kind, ...(kind === 'apk' ? { sha256: message.game.sha256 } : {}) }, status: 'waiting', players: new Map([[player.id, player]]), updatedAt: Date.now(), uploadToken: randomBytes(32).toString('hex'), runtime: kind === 'apk' ? { state: 'uploading', message: 'Uploading the APK to its Android host' } : null };
+        const room = { code, game: { title, kind, ...(kind === 'apk' ? { sha256: message.game.sha256, format: message.game.format ?? 'apk' } : {}) }, status: 'waiting', players: new Map([[player.id, player]]), updatedAt: Date.now(), uploadToken: randomBytes(32).toString('hex'), runtime: kind === 'apk' ? { state: 'uploading', message: 'Uploading the APK to its Android host' } : null };
         rooms.set(code, room);
         send(socket, { type: 'joined', role: 'host', room: describe(room), uploadToken: room.uploadToken });
       } else if (message.type === 'join') {

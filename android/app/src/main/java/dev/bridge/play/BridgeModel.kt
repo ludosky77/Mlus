@@ -4,6 +4,12 @@ import android.app.Application
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,7 +32,9 @@ data class ChatMessage(val id: String, val name: String, val text: String, val m
 data class BridgeState(
     val games: List<LocalGame> = emptyList(), val online: Boolean = false,
     val connecting: Boolean = true, val busy: Boolean = false,
-    val importing: Boolean = false, val importBytes: Long = 0,
+    val importing: Boolean = false, val importBytes: Long = 0, val importingTitle: String = "",
+    val installedApps: List<InstalledApp> = emptyList(), val scanningApps: Boolean = false,
+    val notice: String? = null, val lastAddedId: String? = null, val addSequence: Int = 0,
     val runtimeAvailable: Boolean = false,
     val server: String = "http://127.0.0.1:3210", val name: String = "",
     val room: Room? = null, val role: String = "", val chat: List<ChatMessage> = emptyList(),
@@ -47,15 +55,19 @@ class BridgeModel(application: Application) : AndroidViewModel(application) {
     @Volatile private var generation = 0
     private var shuttingDown = false
     private var upload: Call? = null
+    private var importJob: Job? = null
+    private val libraryReady = CompletableDeferred<Unit>()
+    private val libraryLock = Mutex()
     @Volatile private var videoSink: ((ByteArray) -> Unit)? = null
 
     init {
-        viewModelScope.launch { val games = withContext(Dispatchers.IO) { library.load() }; update { it.copy(games = games) } }
+        viewModelScope.launch { val games = withContext(Dispatchers.IO) { library.load() }; update { it.copy(games = games) }; libraryReady.complete(Unit) }
         connect()
         viewModelScope.launch { while (true) { delay(5000); if (mutable.value.room != null) send(JSONObject().put("type", "ping").put("sentAt", System.currentTimeMillis())) } }
     }
     private fun update(block: (BridgeState) -> BridgeState) { mutable.value = block(mutable.value) }
-    fun clearError() = update { it.copy(error = null) }
+    fun clearError() = update { it.copy(error = null, notice = null) }
+    fun refreshConnection() { if (mutable.value.room == null) connect() }
     private fun fail(message: String) = update { it.copy(error = message, busy = false) }
     fun saveName(name: String) { val safe = name.trim().take(24); prefs.edit().putString("name", safe).apply(); update { it.copy(name = safe) } }
     fun saveServer(value: String) {
@@ -103,7 +115,7 @@ class BridgeModel(application: Application) : AndroidViewModel(application) {
     fun createRoom(game: LocalGame) {
         if (mutable.value.name.isBlank()) { fail("Enter your player name first."); return }
         selectedGame = game; update { it.copy(busy = true) }
-        send(JSONObject().put("type", "create").put("name", mutable.value.name).put("game", JSONObject().put("title", game.title).put("kind", "apk").put("sha256", game.id)))
+        send(JSONObject().put("type", "create").put("name", mutable.value.name).put("game", JSONObject().put("title", game.title).put("kind", "apk").put("sha256", game.id).put("format", game.format)))
     }
     fun joinRoom(code: String) {
         if (mutable.value.name.isBlank()) { fail("Enter your player name first."); return }
@@ -145,7 +157,7 @@ class BridgeModel(application: Application) : AndroidViewModel(application) {
     private fun uploadApk(code: String, token: String) {
         val game = selectedGame ?: return
         val request = Request.Builder().url("${mutable.value.server}/api/rooms/$code/apk").header("Authorization", "Bearer $token")
-            .post(library.file(game).asRequestBody("application/vnd.android.package-archive".toMediaType())).build()
+            .post(library.file(game).asRequestBody((if (game.format == "apk-set") "application/zip" else "application/vnd.android.package-archive").toMediaType())).build()
         upload = uploader.newCall(request)
         val call = upload!!
         viewModelScope.launch {
@@ -162,17 +174,52 @@ class BridgeModel(application: Application) : AndroidViewModel(application) {
     fun videoError(message: String) { viewModelScope.launch { update { it.copy(gameplayError = message) } } }
     fun touches(contacts: JSONArray) { if (mutable.value.gameplayConnected) send(JSONObject().put("type", "input").put("contacts", contacts)) }
     fun releaseControls() { if (mutable.value.room != null && mutable.value.online) send(JSONObject().put("type", "input-release")) }
-    fun importGame(uri: Uri) {
-        if (mutable.value.importing) return
-        update { it.copy(importing = true, importBytes = 0) }
+    fun refreshInstalledApps() {
+        if (mutable.value.scanningApps) return
+        update { it.copy(scanningApps = true) }
         viewModelScope.launch {
+            try { val apps = library.installedApps(); update { it.copy(installedApps = apps) } }
+            catch (error: Exception) { fail(error.message ?: "Could not read the installed apps.") }
+            finally { update { it.copy(scanningApps = false) } }
+        }
+    }
+    fun importGame(uri: Uri) = addToLibrary("APK file") { progress -> library.importApk(uri, progress) }
+    fun importInstalled(app: InstalledApp) = addToLibrary(app.title) { progress -> library.importInstalled(app.packageName, progress) }
+    fun cancelImport() { importJob?.cancel() }
+    private fun addToLibrary(title: String, copy: suspend ((Long) -> Unit) -> LocalGame) {
+        if (mutable.value.importing) return
+        update { it.copy(importing = true, importBytes = 0, importingTitle = title) }
+        importJob = viewModelScope.launch {
             try {
-                val game = library.importApk(uri) { bytes -> viewModelScope.launch { update { it.copy(importBytes = bytes) } } }
-                val games = mutable.value.games.filterNot { it.id == game.id } + game
-                withContext(Dispatchers.IO) { library.save(games) }
-                update { it.copy(games = games) }
-            } catch (error: Exception) { fail(error.message ?: "Could not import the APK.") }
-            finally { update { it.copy(importing = false) } }
+                libraryReady.await()
+                libraryLock.withLock {
+                    val game = copy { bytes -> viewModelScope.launch { update { it.copy(importBytes = bytes) } } }
+                    val games = withContext(Dispatchers.IO) { library.load() }
+                    update { it.copy(games = games, notice = "${game.title} added to your library", lastAddedId = game.id, addSequence = it.addSequence + 1) }
+                }
+            } catch (error: CancellationException) { throw error }
+            catch (error: Exception) { fail(error.message ?: "Could not add the app.") }
+            finally {
+                // If cancellation arrives after the atomic import commit, keep the UI
+                // in sync with the saved library rather than losing the completed copy.
+                withContext(NonCancellable) {
+                    val games = withContext(Dispatchers.IO) { library.load() }
+                    update { it.copy(games = games, importing = false, importingTitle = "") }
+                }
+            }
+        }
+    }
+    fun removeGame(game: LocalGame) {
+        viewModelScope.launch {
+            libraryReady.await()
+            libraryLock.withLock {
+                if (mutable.value.room != null || mutable.value.importing) { fail("Finish the current import or session before removing a library copy."); return@withLock }
+                val games = mutable.value.games.filterNot { it.id == game.id }
+                try {
+                    withContext(Dispatchers.IO) { library.save(games); library.removeCopy(game) }
+                    update { it.copy(games = games, notice = "Removed from your Bridge library") }
+                } catch (_: Exception) { fail("Could not remove the library copy.") }
+            }
         }
     }
     override fun onCleared() { shuttingDown = true; generation++; upload?.cancel(); socket?.close(1000, "App closed"); videoSink = null; client.dispatcher.executorService.shutdown(); super.onCleared() }

@@ -5,7 +5,8 @@ import { constants } from 'node:fs';
 import net from 'node:net';
 import { setTimeout as delay } from 'node:timers/promises';
 import { randomBytes } from 'node:crypto';
-import { VideoParser, TouchRouter, inspectBadging } from './protocol.js';
+import { VideoParser, TouchRouter } from './protocol.js';
+import { preparePackage, inspectPackageSet } from './packages.js';
 
 const execute = promisify(execFile);
 const SCRCPY_VERSION = '4.0';
@@ -20,11 +21,11 @@ export class AndroidHostPool {
     this.enabled = serials.length > 0 && !!serverJar;
   }
   capabilities() { return { enabled: this.enabled, available: this.available.size, transport: 'h264-websocket', maxApkBytes: 512 * 1024 * 1024 }; }
-  async start(apkPath, emit, signal) {
+  async start(apkPath, emit, signal, { format = 'apk' } = {}) {
     if (!this.enabled || !this.available.size) throw new Error('No Android execution host is available.');
     const serial = this.available.values().next().value;
     this.available.delete(serial);
-    let dirty = false, closed = false, port, serverProcess, video, control, timer, closePromise;
+    let dirty = false, closed = false, port, serverProcess, video, control, timer, closePromise, prepared;
     const invoke = (...args) => execute(this.adb, ['-s', serial, ...args], { timeout: 60_000, maxBuffer: 1024 * 1024, signal });
     const bestEffort = (...args) => execute(this.adb, ['-s', serial, ...args], { timeout: 10_000 }).catch(() => {});
     const touches = new TouchRouter(packet => {
@@ -50,8 +51,8 @@ export class AndroidHostPool {
       signal?.throwIfAborted();
       await access(this.serverJar, constants.R_OK);
       emit({ type: 'state', state: 'checking', message: 'Checking the Android host' });
-      const { stdout: badging } = await execute(this.aapt, ['dump', 'badging', apkPath], { timeout: 20_000, maxBuffer: 2 * 1024 * 1024, signal });
-      const apk = inspectBadging(badging);
+      prepared = await preparePackage(apkPath, format, signal);
+      const apk = await inspectPackageSet(prepared.files, async file => (await execute(this.aapt, ['dump', 'badging', file], { timeout: 20_000, maxBuffer: 2 * 1024 * 1024, signal })).stdout);
       const [{ stdout: apiText }, { stdout: abiText }] = await Promise.all([invoke('shell', 'getprop', 'ro.build.version.sdk'), invoke('shell', 'getprop', 'ro.product.cpu.abilist')]);
       const api = Number(apiText.trim()), abis = abiText.trim().split(',');
       if (!Number.isInteger(api) || api < apk.minSdk) throw new Error(`This APK requires Android API ${apk.minSdk}; the available host reports ${api || 'an unknown version'}.`);
@@ -60,7 +61,7 @@ export class AndroidHostPool {
       if (closed) throw new Error('The Android session was cancelled.');
       emit({ type: 'state', state: 'installing', message: 'Installing the APK in its Android session' });
       dirty = true;
-      const install = await invoke('install', '--no-streaming', apkPath);
+      const install = await invoke(prepared.files.length > 1 ? 'install-multiple' : 'install', '--no-streaming', ...prepared.files);
       if (!/\bSuccess\b/.test(install.stdout)) throw new Error('Android rejected the APK installation. A complete compatible APK is required.');
       const launch = await invoke('shell', 'cmd', 'package', 'resolve-activity', '--brief', '-a', 'android.intent.action.MAIN', '-c', 'android.intent.category.LAUNCHER', apk.packageName);
       const component = launch.stdout.trim().split(/\r?\n/).find(line => /^[A-Za-z0-9_.]+\/[A-Za-z0-9_.$]+$/.test(line));
@@ -98,6 +99,7 @@ export class AndroidHostPool {
       video.resume(); timer = setInterval(() => touches.expire(), 250); timer.unref();
       return { input: (slot, contacts) => touches.input(slot, contacts), release: slot => touches.release(slot), close };
     } catch (error) { await close(); throw error; }
+    finally { await prepared?.cleanup(); }
   }
 }
 

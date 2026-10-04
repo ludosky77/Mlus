@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Paddle Duel</title><style>html,body{margin:0;width:100%;height:100%;background:#15281e;overflow:hidden;display:grid;place-items:center}canvas{width:100%;height:100%;object-fit:contain;display:block;touch-action:none}</style></head><body><canvas width="960" height="600" aria-label="Offline two-player paddle game"></canvas><script>
+// This file is an ordinary offline game. It has no rooms, WebSocket, WebRTC,
+// remote-input protocol, or awareness of the Bridge application.
+const canvas = document.querySelector('canvas');
+const context = canvas.getContext('2d');
+const keys = new Set();
+const game = { left: 250, right: 250, x: 480, y: 300, vx: 310, vy: 150, scores: [0, 0], started: false, paused: true, won: false };
+function serve(direction) { game.x = 480; game.y = 300; game.vx = 310 * direction; game.vy = (Math.random() > .5 ? 1 : -1) * 150; }
+document.addEventListener('keydown', event => {
+  keys.add(event.code);
+  if (event.code === 'Space' && !event.repeat) {
+    if (game.won) { game.scores = [0, 0]; game.won = false; game.started = false; serve(1); }
+    if (!game.started) { game.started = true; game.paused = false; } else game.paused = !game.paused;
+  }
+  if (['ArrowUp', 'ArrowDown', 'Space'].includes(event.code)) event.preventDefault();
+});
+document.addEventListener('keyup', event => keys.delete(event.code));
+window.addEventListener('blur', () => keys.clear());
+window.pauseGame = () => { game.paused = true; keys.clear(); };
+let previous = performance.now();
+function frame(now) {
+  const dt = Math.min((now - previous) / 1000, .04); previous = now;
+  if (!game.won) {
+    game.left = Math.max(25, Math.min(475, game.left + ((keys.has('KeyS') ? 1 : 0) - (keys.has('KeyW') ? 1 : 0)) * 400 * dt));
+    game.right = Math.max(25, Math.min(475, game.right + ((keys.has('ArrowDown') ? 1 : 0) - (keys.has('ArrowUp') ? 1 : 0)) * 400 * dt));
+  }
+  if (!game.paused && !game.won) {
+    game.x += game.vx * dt; game.y += game.vy * dt;
+    if (game.y < 27 || game.y > 573) { game.y = Math.max(27, Math.min(573, game.y)); game.vy *= -1; }
+    if (game.vx < 0 && game.x < 57 && game.x > 39 && game.y >= game.left - 7 && game.y <= game.left + 107) { game.x = 57; game.vx = Math.min(-game.vx * 1.05, 650); game.vy = ((game.y - game.left - 50) / 50) * 330; }
+    if (game.vx > 0 && game.x > 903 && game.x < 921 && game.y >= game.right - 7 && game.y <= game.right + 107) { game.x = 903; game.vx = Math.max(-game.vx * 1.05, -650); game.vy = ((game.y - game.right - 50) / 50) * 330; }
+    if (game.x < 0 || game.x > 960) { game.scores[game.x < 0 ? 1 : 0]++; serve(game.x < 0 ? 1 : -1); if (Math.max(...game.scores) >= 7) { game.won = true; game.paused = true; } }
+  }
+  context.fillStyle = '#15281e'; context.fillRect(0, 0, 960, 600);
+  context.strokeStyle = '#49613d'; context.lineWidth = 2; context.strokeRect(24, 24, 912, 552);
+  context.setLineDash([8, 12]); context.beginPath(); context.moveTo(480, 24); context.lineTo(480, 576); context.stroke(); context.setLineDash([]);
+  context.fillStyle = '#a1b78e'; context.font = '44px monospace'; context.textAlign = 'center'; context.fillText(String(game.scores[0]).padStart(2, '0'), 370, 86); context.fillText(String(game.scores[1]).padStart(2, '0'), 590, 86);
+  context.fillStyle = '#d9edb5'; context.fillRect(40, game.left, 10, 100); context.fillRect(910, game.right, 10, 100); context.fillRect(game.x - 6, game.y - 6, 12, 12);
+  if (game.paused) {
+    context.fillStyle = '#15281ee8'; context.fillRect(180, 222, 600, 150);
+    context.fillStyle = '#d9edb5'; context.font = '30px Arial'; context.fillText(game.won ? 'PLAYER ' + (game.scores[0] > game.scores[1] ? '1' : '2') + ' WINS' : game.started ? 'PAUSED' : 'PADDLE DUEL', 480, 282);
+    context.fillStyle = '#96ac85'; context.font = '16px Arial'; context.fillText(game.won ? 'SPACE TO PLAY AGAIN' : game.started ? 'SPACE TO RESUME' : 'W / S     ·     ARROW KEYS     ·     SPACE TO START', 480, 326);
+  }
+  // Useful for inspecting the standalone game in a debugger; never sent over the network.
+  canvas.dataset.player1 = String(Math.round(game.left)); canvas.dataset.player2 = String(Math.round(game.right)); canvas.dataset.paused = String(game.paused);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script></body></html>

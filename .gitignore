@@ -1,0 +1,20 @@
+node_modules/
+test-results/
+playwright-report/
+.env
+*.log
+.toolchain/
+android/.gradle/
+android/local.properties
+android/**/build/
+.env.*
+!.env.example
+*.jks
+*.keystore
+android/.kotlin/
+.idea/
+
+# Local credentials and generated preview images
+mlus-pat
+*-pat
+artifacts/*.png

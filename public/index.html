@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#182b24"><meta name="description" content="A private room for playing supported offline multiplayer games with friends.">
+  <title>Bridge · Play together</title><link rel="icon" href="/icon.svg"><link rel="manifest" href="/manifest.webmanifest"><link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <svg class="svg-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+    <symbol id="i-game" viewBox="0 0 24 24"><path d="M6 8h12a3 3 0 0 1 3 3v6a2 2 0 0 1-3.4 1.4L15 16H9l-2.6 2.4A2 2 0 0 1 3 17v-6a3 3 0 0 1 3-3Z"/><path d="M7 11v4m-2-2h4m6-1h.01m3 2h.01M12 8V5"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V3m-5 5 5-5 5 5M4 16v5h16v-5"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3m2-16a3 3 0 0 1 0 6m1 4a5 5 0 0 1 3 5"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 11a8 8 0 0 1-8 8H7l-4 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/><path d="M7 8h10M7 12h7"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="13" rx="1"/><path d="M16 8V3H3v13h5"/></symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="m8 4 12 8-12 8Z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 4v16m8-16v16"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m4 12 5 5L20 6"/></symbol>
+    <symbol id="i-signal" viewBox="0 0 24 24"><path d="M4 20v-3m5 3v-7m5 7V9m5 11V4"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v13m-5-5 5 5 5-5M4 17v4h16v-4"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10h.01"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 7h16M4 17h16"/><rect x="7" y="4" width="4" height="6" rx="1"/><rect x="14" y="14" width="4" height="6" rx="1"/></symbol>
+  </defs></svg>
+  <aside class="rail">
+    <a class="brand" href="/" aria-label="Bridge home"><img src="/icon.svg" alt="" width="32" height="32"><span>bridge<span class="brand-period">.</span></span></a>
+    <p class="rail-label">YOUR SPACE</p>
+    <button class="nav-item active" id="library-nav"><svg class="icon"><use href="#i-grid"/></svg>Game library<span class="nav-count" id="game-count">1</span></button>
+    <button class="nav-item" id="room-nav" disabled><svg class="icon"><use href="#i-users"/></svg>Your room</button>
+    <div class="rail-bottom"><span class="version">EARLY BUILD · 0.1</span><p>Good games.<br>Better together.</p></div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar"><span class="breadcrumb" id="breadcrumb">Workspace <span>/</span> Game library</span><div class="server-indicator"><span class="status-dot" id="server-dot"></span><span id="server-status">Connecting</span></div></header>
+    <main>
+      <section id="library-view">
+        <div class="page-heading"><div><p class="eyebrow">PLAY TOGETHER</p><h1>Your next game night.</h1><p class="lead">Bring a friend to an offline multiplayer game.</p></div><span class="outline-tag"><svg class="icon"><use href="#i-users"/></svg>2 players · Private rooms</span></div>
+        <div class="library-layout">
+          <div class="library-main">
+            <div class="section-bar"><div><h2>Game library <span id="library-count">01</span></h2><p>Select a game to host a room.</p></div><button class="button secondary small" id="import-button"><svg class="icon"><use href="#i-upload"/></svg>Import game</button><input type="file" id="game-file" accept=".html,.htm,text/html" hidden></div>
+            <div id="games" class="games-grid">
+              <button class="game-card selected" data-game="demo" aria-pressed="true"><div class="game-art"><div class="court"><span class="court-net"></span><span class="paddle paddle-one"></span><span class="paddle paddle-two"></span><span class="ball"></span><span class="court-score">03 <span>02</span></span></div><span class="art-label">THE ORIGINAL TWO-PLAYER RALLY</span><span class="selected-mark"><svg class="icon"><use href="#i-check"/></svg></span></div><div class="game-card-body"><div class="game-title-row"><h3>Paddle Duel</h3><span class="supported-tag">Supported</span></div><p>One court. Two paddles. First to seven.</p><div class="game-meta"><span><svg class="icon"><use href="#i-users"/></svg>2 players</span><span>Offline HTML</span><span class="local-label">Included</span></div></div></button>
+            </div>
+            <div class="import-note"><svg class="icon"><use href="#i-info"/></svg><div><strong>Start with a supported game.</strong><p>This build bridges offline canvas games with keyboard controls. Import a self-contained HTML file. APK and ROM support need their own runtime.</p><a href="/games/paddle-duel.html" download="paddle-duel.html">Download the offline test game <svg class="icon"><use href="#i-download"/></svg></a></div></div>
+            <details class="controls-settings"><summary><svg class="icon"><use href="#i-settings"/></svg>Game controls <span>Keyboard mapping</span></summary><p>Map the two players’ vertical controls before creating a room. Imported games must accept ordinary keyboard events.</p><div class="mapping-grid"><label>Player 1 · Up<input id="p1-up" value="KeyW" maxlength="24"></label><label>Player 1 · Down<input id="p1-down" value="KeyS" maxlength="24"></label><label>Player 2 · Up<input id="p2-up" value="ArrowUp" maxlength="24"></label><label>Player 2 · Down<input id="p2-down" value="ArrowDown" maxlength="24"></label></div></details>
+          </div>
+          <aside class="lobby-panel">
+            <div class="panel-heading"><svg class="icon"><use href="#i-users"/></svg><h2>Meet in a room.</h2></div><p class="panel-intro">A game, a room code, and your friend.<br>That’s all you need.</p>
+            <label for="player-name">Your name</label><input id="player-name" autocomplete="nickname" placeholder="What should we call you?" maxlength="24">
+            <div class="selected-game"><span class="field-caption">SELECTED GAME</span><strong id="selected-title">Paddle Duel</strong><span id="selected-subtitle">Two players · Runs on your device</span></div>
+            <button class="button primary" id="create-room" disabled>Create a room<svg class="icon"><use href="#i-arrow"/></svg></button>
+            <div class="divider"><span>OR JOIN YOUR FRIEND</span></div>
+            <form id="join-form"><label for="room-code">Room code</label><div class="join-row"><input id="room-code" class="code-input" placeholder="ABC123" maxlength="6" autocomplete="off" autocapitalize="characters" pattern="[A-Za-z2-9]{6}" required aria-describedby="join-help"><button class="button secondary" id="join-room" type="submit" disabled>Join<svg class="icon"><use href="#i-arrow"/></svg></button></div><p class="field-help" id="join-help">Ask your friend for their six-character code.</p></form>
+            <div class="text-only"><svg class="icon"><use href="#i-chat"/></svg><span>Text chat included. Keep it simple.</span></div>
+          </aside>
+        </div>
+        <div class="how-it-works"><div><span>01</span><strong>Choose your game</strong><p>Use a supported offline multiplayer game.</p></div><div><span>02</span><strong>Invite your friend</strong><p>Share a private room code or link.</p></div><div><span>03</span><strong>Play from anywhere</strong><p>Your controls meet in one game session.</p></div></div>
+      </section>
+      <section id="room-view" hidden>
+        <div class="page-heading room-heading"><div><p class="eyebrow" id="room-eyebrow">PRIVATE ROOM</p><h1 id="room-title">Paddle Duel</h1><p class="lead" id="room-description">Waiting for your friend.</p></div><button class="button secondary small" id="leave-room"><svg class="icon"><use href="#i-close"/></svg>Leave room</button></div>
+        <div class="room-layout"><div class="play-panel"><div class="game-toolbar"><div><span class="status-dot" id="peer-dot"></span><span id="peer-status">Waiting for player 2</span></div><button class="icon-button" id="fullscreen" aria-label="Fullscreen game"><svg class="icon"><use href="#i-expand"/></svg></button></div><div class="game-stage" id="game-stage"><iframe id="game-frame" title="Host game" sandbox="allow-scripts" allow="autoplay" hidden></iframe><video id="game-video" autoplay playsinline muted hidden aria-label="Live game from the host"></video><div id="stage-placeholder"><svg class="icon"><use href="#i-game"/></svg><strong>Connecting to the game</strong><p id="stage-message">The game runs on the host’s device.</p></div></div><div class="game-footer"><span><svg class="icon"><use href="#i-signal"/></svg><span id="room-ping">Room ping —</span></span><button id="start-game" class="button primary small" disabled><svg class="icon"><use href="#i-play"/></svg><span>Start game</span></button></div><div class="touch-controls"><div><span class="field-caption" id="controls-caption">YOUR CONTROLS · PLAYER 1</span><p id="keyboard-hint">W / S to move · Space to start</p></div><div class="touch-buttons"><button class="button secondary" id="move-up" aria-label="Move up">↑<span>Up</span></button><button class="button secondary" id="move-down" aria-label="Move down">↓<span>Down</span></button></div></div><p class="connection-note" id="connection-note">Keep this window open. Your friend receives the game screen and sends their controls back.</p></div>
+        <aside class="room-sidebar"><div class="invite-panel"><span class="field-caption">ROOM CODE</span><div class="room-code-row"><strong id="invite-code">------</strong><button class="icon-button" id="copy-code" aria-label="Copy room code"><svg class="icon"><use href="#i-copy"/></svg></button></div><button class="button secondary small" id="copy-link">Copy invite link<svg class="icon"><use href="#i-arrow"/></svg></button></div><div class="players-panel"><div class="section-bar"><h2>Players</h2><span id="player-count">1 / 2</span></div><div id="players"></div></div><div class="chat-panel"><div class="chat-heading"><svg class="icon"><use href="#i-chat"/></svg><h2>Room chat</h2><span>TEXT ONLY</span></div><div id="messages" class="messages" role="log" aria-live="polite"><p class="chat-empty">Say hello. Plan your next win.</p></div><form id="chat-form"><label for="chat-input" class="sr-only">Message your friend</label><input id="chat-input" placeholder="Message your friend…" maxlength="600" autocomplete="off"><button class="icon-button" type="submit" aria-label="Send message"><svg class="icon"><use href="#i-arrow"/></svg></button></form></div></aside></div>
+      </section>
+    </main><footer class="app-footer"><span>BRIDGE · MADE FOR GAME NIGHT</span><span>Private rooms. Shared play.</span></footer>
+  </div>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

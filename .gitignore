@@ -22,3 +22,4 @@ artifacts/*.apk
 artifacts/*.zip
 artifacts/lint-results-debug.*
 .ci-signing/
+.local-server/

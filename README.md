@@ -48,6 +48,10 @@ Its browser tests do not validate the native Android application.
 
 ## Check the room service locally
 
+The room service can run on the Termux phone now and move to a VPS later. See
+[phone server setup](docs/termux-server.md) for connection details and the separate
+work still required to host gameplay.
+
 ```sh
 npm ci
 npm run check

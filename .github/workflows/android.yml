@@ -24,6 +24,8 @@ jobs:
     needs: verify
     runs-on: ubuntu-24.04
     timeout-minutes: 35
+    env:
+      BRIDGE_DEBUG_KEYSTORE: ${{ github.workspace }}/.ci-signing/debug.keystore
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
@@ -40,8 +42,17 @@ jobs:
       - name: Keep the development signing key across builds
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
-          path: ~/.android/debug.keystore
-          key: bridge-debug-signing-v1
+          path: ${{ env.BRIDGE_DEBUG_KEYSTORE }}
+          key: bridge-debug-signing-v2
+      - name: Prepare the development signing key
+        run: |
+          if [ ! -f "$BRIDGE_DEBUG_KEYSTORE" ]; then
+            mkdir -p "$(dirname "$BRIDGE_DEBUG_KEYSTORE")"
+            keytool -genkeypair -noprompt -storetype JKS \
+              -keystore "$BRIDGE_DEBUG_KEYSTORE" -storepass android \
+              -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 \
+              -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          fi
       - name: Lint and build native debug APK
         working-directory: android
         run: ./gradlew --no-daemon :app:lintDebug :app:assembleDebug

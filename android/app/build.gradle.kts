@@ -19,6 +19,15 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
+    signingConfigs.getByName("debug") {
+        System.getenv("BRIDGE_DEBUG_KEYSTORE")?.let { path ->
+            storeFile = file(path)
+            storeType = "JKS"
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
 }
 dependencies {
     implementation(platform("androidx.compose:compose-bom:2025.10.00"))

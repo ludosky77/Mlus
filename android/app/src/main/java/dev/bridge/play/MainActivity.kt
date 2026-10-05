@@ -64,11 +64,11 @@ fun BridgeTheme(content: @Composable () -> Unit) {
 @Composable
 private fun BridgeApp(model: BridgeModel) {
     val state by model.state.collectAsStateWithLifecycle()
-    var route by rememberSaveable { mutableStateOf("play") }
-    var parentRoute by rememberSaveable { mutableStateOf("play") }
+    var route by rememberSaveable { mutableStateOf("library") }
+    var parentRoute by rememberSaveable { mutableStateOf("library") }
     var selectedId by rememberSaveable { mutableStateOf("") }
     var dialog by rememberSaveable { mutableStateOf("") }
-    var observedAdd by rememberSaveable { mutableIntStateOf(state.addSequence) }
+    var observedAdd by remember { mutableIntStateOf(state.addSequence) }
     val selected = state.games.find { it.id == selectedId }
     val snack = remember { SnackbarHostState() }
     val importer = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { it?.let(model::importGame) }
@@ -87,10 +87,10 @@ private fun BridgeApp(model: BridgeModel) {
             dialog.isNotEmpty() -> dialog = ""
             state.room != null -> dialog = "leave"
             route in listOf("installed", "details") -> route = parentRoute.takeUnless { it in listOf("installed", "details") } ?: "library"
-            else -> route = "play"
+            else -> route = "library"
         }
     }
-    BackHandler(state.room != null || route != "play" || dialog.isNotEmpty()) { back() }
+    BackHandler(state.room != null || route != "library" || dialog.isNotEmpty()) { back() }
     val nested = state.room != null || route in listOf("installed", "details")
     Surface(color = Background, modifier = Modifier.fillMaxSize()) {
         Scaffold(containerColor = Background, modifier = Modifier.safeDrawingPadding().imePadding(), snackbarHost = { SnackbarHost(snack) }, topBar = {
@@ -100,9 +100,9 @@ private fun BridgeApp(model: BridgeModel) {
                     else Icon(painterResource(R.drawable.ic_bridge), null, Modifier.size(28.dp), tint = Color.Unspecified)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(when { state.room != null -> state.room!!.title; route == "installed" -> "Add from this phone"; route == "details" -> "Game details"; else -> "Bridge" }, fontSize = 19.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        if (!nested) Text("${when (route) { "library" -> "Your collection"; "settings" -> "Your preferences"; else -> "Play together" }}", fontSize = 11.sp, color = Secondary)
+                        Text(when { state.room != null -> state.room!!.title; route == "installed" -> "Add from this phone"; route == "details" -> "Game details"; route == "settings" -> "Settings"; route == "play" -> "Rooms"; else -> "Library" }, fontSize = 19.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
+                    if (route == "library" && state.room == null && state.games.isNotEmpty()) TextButton(onClick = addFromPhone, enabled = !state.importing) { Icon(Icons.Outlined.Add, null, Modifier.size(17.dp)); Spacer(Modifier.width(5.dp)); Text("Add game", fontSize = 12.sp) }
                     if (route == "installed" && state.room == null) IconButton(onClick = model::refreshInstalledApps, enabled = !state.scanningApps) { Icon(Icons.Outlined.Refresh, "Refresh installed apps", tint = Secondary) }
                 }
                 HorizontalDivider(color = Line)
@@ -111,8 +111,8 @@ private fun BridgeApp(model: BridgeModel) {
             if (!nested) Column {
                 HorizontalDivider(color = Line)
                 Row(Modifier.fillMaxWidth().background(Background)) {
-                    NavItem("Play", Icons.Outlined.SportsEsports, route == "play", Modifier.weight(1f)) { route = "play" }
-                    NavItem("Library", Icons.Outlined.GridView, route == "library", Modifier.weight(1f)) { route = "library" }
+                    NavItem("Library", Icons.Outlined.SportsEsports, route == "library", Modifier.weight(1f)) { route = "library" }
+                    NavItem("Rooms", Icons.Outlined.PeopleOutline, route == "play", Modifier.weight(1f)) { route = "play" }
                     NavItem("Settings", Icons.Outlined.Settings, route == "settings", Modifier.weight(1f)) { route = "settings" }
                 }
             }
@@ -123,10 +123,10 @@ private fun BridgeApp(model: BridgeModel) {
                     if (state.room != null) RoomScreen(state, model)
                     else when (route) {
                         "installed" -> InstalledAppsScreen(state, model::importInstalled, importFile)
-                        "details" -> if (selected != null) GameDetailsScreen(selected, state, { dialog = "host" }, { route = "settings" }, { dialog = "remove" }) else GameLibraryScreen(state, addFromPhone, importFile, openGame)
+                        "details" -> if (selected != null) GameDetailsScreen(selected, state, { dialog = "host" }, { dialog = "remove" }) else GameLibraryScreen(state, addFromPhone, importFile, openGame)
                         "library" -> GameLibraryScreen(state, addFromPhone, importFile, openGame)
                         "settings" -> SettingsScreen(state, { name, server -> model.saveName(name); model.saveServer(server) }, model::refreshConnection)
-                        else -> PlayScreen(state, { if (state.games.isEmpty()) addFromPhone() else route = "library" }, { dialog = "join" }, addFromPhone, importFile, openGame, { route = "library" }, { route = "settings" })
+                        else -> RoomLobbyScreen(state, { if (state.games.isEmpty()) addFromPhone() else route = "library" }, { dialog = "join" })
                     }
                 }
             }
@@ -147,7 +147,7 @@ private fun BridgeApp(model: BridgeModel) {
                     OutlinedTextField(name, { name = it.take(24) }, label = { Text("Player name") }, singleLine = true, shape = Rect, modifier = Modifier.fillMaxWidth())
                     if (!hosting) OutlinedTextField(code, { code = it.filter(Char::isLetterOrDigit).uppercase().take(6) }, label = { Text("Room code") }, supportingText = { Text("Ask your friend for their six-character code.") }, singleLine = true, shape = Rect, modifier = Modifier.fillMaxWidth())
                     if (!state.online || hosting && !state.runtimeAvailable) {
-                        Text(if (!state.online) "Connect to a session server before joining or hosting." else "The server is connected, but no Android session is available to run this game.", color = Secondary, fontSize = 13.sp, lineHeight = 19.sp)
+                        Text(if (!state.online) "Connect to a session server before joining or hosting." else "The gameplay service is unavailable. The room server needs a running Android host before it can start a game.", color = Secondary, fontSize = 13.sp, lineHeight = 19.sp)
                         OutlinedButton(onClick = { dialog = ""; route = "settings" }, shape = Rect, modifier = Modifier.fillMaxWidth()) { Text("Connection settings") }
                     }
                     if (hosting) Text("Bridge uploads its library copy to the session server. Share the room code once the room opens.", fontSize = 12.sp, lineHeight = 18.sp, color = Secondary)

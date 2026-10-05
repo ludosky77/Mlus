@@ -20,7 +20,7 @@ Android installation remains the authoritative package/signature check.
 
 ## Status
 
-Version 0.2 reorganizes the native interface into Play, Library and Settings, adds
+Version 0.2.1 opens directly to a flat Library, with separate Rooms and Settings, and adds
 the installed-app picker, import progress/cancellation, app details and library-copy
 removal. The local server suite now contains 19 passing tests, including split
 archive extraction and package consistency. Device import behavior still needs

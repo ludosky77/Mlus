@@ -51,13 +51,16 @@ Outstanding:
 Compatibility is requirement-based, not tied to named games. Shared execution cannot
 create multiplayer game logic that an application does not already contain.
 
-Version 0.2 source changes:
+Version 0.2.1 source changes:
 
-- Play / Library / Settings navigation; visible Host and Join actions; actionable
+- Library / Rooms / Settings navigation; visible Host and Join actions; actionable
   offline state; native installed-app picker with real app icons and search.
 - Launcher-intent package visibility, with no QUERY_ALL_PACKAGES or storage permission.
 - Direct base/split extraction, import progress and cancellation, package details,
   private-copy deletion, package-update detection and atomic library commits.
 - Host-side split-set extraction and install-multiple support, validated by 19 Node
   tests. APK signatures are still validated by Android at installation time.
-- New Android build and physical-device import review are pending for this revision.
+- The installed-app implementation passed remote compilation and lint in
+  [run 37245548339](https://github.com/ludosky77/Mlus/actions/runs/37245548339).
+- A further UI pass removes dashboard cards and secondary metadata from lists.
+  Its remote build and physical-device import/layout review remain pending.

@@ -10,6 +10,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -38,68 +40,28 @@ import java.util.Locale
 private fun sizeLabel(bytes: Long): String = if (bytes < 1024 * 1024) "${bytes / 1024} KB" else String.format(Locale.getDefault(), "%.1f MB", bytes / (1024.0 * 1024))
 
 @Composable
-private fun Heading(title: String, subtitle: String? = null) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(title, fontSize = 25.sp, fontWeight = FontWeight.SemiBold)
-        if (subtitle != null) Text(subtitle, fontSize = 13.sp, lineHeight = 20.sp, color = Secondary)
-    }
-}
-
-@Composable
-internal fun PlayScreen(state: BridgeState, onHost: () -> Unit, onJoin: () -> Unit, onAdd: () -> Unit, onFile: () -> Unit, onGame: (LocalGame) -> Unit, onLibrary: () -> Unit, onSettings: () -> Unit) {
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
-        item { Heading("Start a session", "Choose a game. Make a room. Bring a friend.") }
-        item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                SessionAction("Host a game", "Pick from your library", Icons.Outlined.SportsEsports, true, Modifier.weight(1f), onHost)
-                SessionAction("Join a friend", "Enter a room code", Icons.Outlined.PeopleOutline, false, Modifier.weight(1f), onJoin)
-            }
-        }
-        item {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("Your library", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                if (state.games.isNotEmpty()) TextButton(onClick = onLibrary) { Text("View all", fontSize = 12.sp) }
-            }
-        }
-        if (state.games.isEmpty()) item { EmptyLibrary(!state.importing, onAdd, onFile) }
-        else {
-            item {
-                Surface(shape = Rect, color = Panel, border = BorderStroke(1.dp, Line)) {
-                    Column {
-                        state.games.take(3).forEachIndexed { index, game ->
-                            GameListRow(game, { onGame(game) })
-                            if (index < minOf(state.games.size, 3) - 1) HorizontalDivider(Modifier.padding(start = 76.dp), color = Line)
-                        }
-                    }
-                }
-            }
-            item { OutlinedButton(onClick = onAdd, enabled = !state.importing, shape = Rect, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), border = BorderStroke(1.dp, Line)) { Icon(Icons.Outlined.Add, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text("Add from this phone") } }
-        }
-        item { ConnectionPanel(state, onSettings) }
-    }
-}
-
-@Composable
-private fun SessionAction(title: String, subtitle: String, icon: ImageVector, primary: Boolean, modifier: Modifier, onClick: () -> Unit) {
-    Surface(onClick = onClick, modifier = modifier, shape = Rect, color = Panel, border = BorderStroke(1.dp, if (primary) Accent else Line)) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Icon(icon, null, Modifier.size(26.dp), tint = if (primary) Accent else Foreground)
-            Spacer(Modifier.height(6.dp))
-            Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-            Text(subtitle, fontSize = 11.sp, lineHeight = 17.sp, color = Secondary)
-        }
+internal fun RoomLobbyScreen(state: BridgeState, onHost: () -> Unit, onJoin: () -> Unit) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+        Spacer(Modifier.height(12.dp))
+        Text("Play with a friend", fontSize = 23.sp, fontWeight = FontWeight.SemiBold)
+        Text("Host a game from your library, or join with a room code.", color = Secondary, fontSize = 13.sp, lineHeight = 21.sp)
+        Spacer(Modifier.height(6.dp))
+        PrimaryButton("Host a game", modifier = Modifier.fillMaxWidth(), onClick = onHost)
+        OutlinedButton(onClick = onJoin, shape = Rect, border = BorderStroke(1.dp, Line), modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Join a room") }
+        if (!state.online || !state.runtimeAvailable) Text("Online gameplay is not connected yet. You can add games to your library while setup is unfinished.", color = Secondary, fontSize = 12.sp, lineHeight = 20.sp)
     }
 }
 
 @Composable
 private fun EmptyLibrary(enabled: Boolean, onAdd: () -> Unit, onFile: () -> Unit) {
-    Surface(shape = Rect, color = Panel, border = BorderStroke(1.dp, Line)) {
-        Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Icon(Icons.Outlined.Apps, null, tint = Secondary, modifier = Modifier.size(32.dp))
-            Text("Add your first game", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-            Text("Choose an app already installed on this phone. Bridge copies its package files into your library.", color = Secondary, fontSize = 13.sp, lineHeight = 20.sp)
+    Box(Modifier.fillMaxSize().padding(28.dp), contentAlignment = Alignment.Center) {
+        Column(Modifier.verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Icon(Icons.Outlined.SportsEsports, null, tint = Secondary, modifier = Modifier.size(42.dp))
+            Text("Add your first game", fontSize = 21.sp, fontWeight = FontWeight.SemiBold)
+            Text("Choose an app already on your phone.", color = Secondary, fontSize = 13.sp)
+            Spacer(Modifier.height(4.dp))
             PrimaryButton("Choose installed app", enabled, Modifier.fillMaxWidth(), onAdd)
-            TextButton(onClick = onFile, enabled = enabled, modifier = Modifier.align(Alignment.CenterHorizontally)) { Icon(Icons.Outlined.FolderOpen, null, Modifier.size(17.dp)); Spacer(Modifier.width(8.dp)); Text("Import an APK file", fontSize = 12.sp) }
+            TextButton(onClick = onFile, enabled = enabled) { Text("Import an APK file", fontSize = 12.sp) }
         }
     }
 }
@@ -107,20 +69,15 @@ private fun EmptyLibrary(enabled: Boolean, onAdd: () -> Unit, onFile: () -> Unit
 @Composable
 internal fun GameLibraryScreen(state: BridgeState, onAdd: () -> Unit, onFile: () -> Unit, onGame: (LocalGame) -> Unit) {
     var query by rememberSaveable { mutableStateOf("") }
+    if (state.games.isEmpty()) { EmptyLibrary(!state.importing, onAdd, onFile); return }
     val games = state.games.filter { it.title.contains(query, true) || it.packageName.contains(query, true) }
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        item { Heading("Library", "${state.games.size} ${if (state.games.size == 1) "app" else "apps"} · ${sizeLabel(state.games.sumOf { it.bytes })} stored in Bridge") }
-        if (state.games.isNotEmpty()) {
-            item {
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    PrimaryButton("Add from phone", !state.importing, Modifier.weight(1f), onAdd)
-                    OutlinedButton(onClick = onFile, enabled = !state.importing, shape = Rect, modifier = Modifier.heightIn(min = 48.dp)) { Icon(Icons.Outlined.FolderOpen, "Import APK file", Modifier.size(20.dp)) }
-                }
-            }
-            item { SearchField(query, { query = it }, "Find a game or app") }
-            items(games, key = { it.id }) { game -> Surface(color = Panel, shape = Rect, border = BorderStroke(1.dp, Line)) { GameListRow(game, { onGame(game) }) } }
-            if (games.isEmpty()) item { Text("No matching apps in your library.", color = Secondary, fontSize = 13.sp) }
-        } else item { EmptyLibrary(!state.importing, onAdd, onFile) }
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(horizontal = 20.dp, vertical = 18.dp)) {
+        item { SearchField(query, { query = it }, "Search your library"); Spacer(Modifier.height(16.dp)) }
+        items(games, key = { it.id }) { game ->
+            GameListRow(game, { onGame(game) })
+            HorizontalDivider(Modifier.padding(start = 64.dp), color = Line)
+        }
+        if (games.isEmpty()) item { Text("No matching apps.", color = Secondary, fontSize = 13.sp, modifier = Modifier.padding(vertical = 24.dp)) }
     }
 }
 
@@ -130,7 +87,6 @@ internal fun InstalledAppsScreen(state: BridgeState, onImport: (InstalledApp) ->
     var gamesOnly by rememberSaveable { mutableStateOf(false) }
     val apps = state.installedApps.filter { (!gamesOnly || it.isGame) && (it.title.contains(query, true) || it.packageName.contains(query, true)) }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        item { Text("Select an app to copy into Bridge. Apps with multiple package files are kept together.", fontSize = 13.sp, color = Secondary, lineHeight = 20.sp) }
         item { SearchField(query, { query = it }, "Search installed apps") }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -142,32 +98,32 @@ internal fun InstalledAppsScreen(state: BridgeState, onImport: (InstalledApp) ->
         if (state.scanningApps) item { LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = Accent, trackColor = Line) }
         items(apps, key = { it.packageName }) { app ->
             val added = state.games.any { it.packageName == app.packageName }
-            Surface(color = Panel, shape = Rect, border = BorderStroke(1.dp, Line)) {
-                Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column {
+                Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     AppIcon(app.packageName)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                         Text(app.title, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                        Text(if (!app.readable) "Package access unavailable" else "${sizeLabel(app.bytes)} · ${app.apkCount} ${if (app.apkCount == 1) "APK" else "APKs"}", fontSize = 11.sp, color = Secondary)
-                        if (added) Text("In your library", fontSize = 10.sp, color = Accent)
+                        Text(if (!app.readable) "Package access unavailable" else sizeLabel(app.bytes), fontSize = 11.sp, color = Secondary)
                     }
                     Spacer(Modifier.width(6.dp))
                     IconButton(onClick = { onImport(app) }, enabled = !state.importing && app.readable && app.bytes <= ApkLibrary.MAX_BYTES) {
                         Icon(if (added) Icons.Outlined.Refresh else Icons.Outlined.Add, if (added) "Copy latest ${app.title}" else "Add ${app.title}", tint = if (!state.importing && app.readable && app.bytes <= ApkLibrary.MAX_BYTES) Accent else Secondary)
                     }
                 }
+                HorizontalDivider(Modifier.padding(start = 58.dp), color = Line)
             }
         }
         if (!state.scanningApps && apps.isEmpty()) item { Text(if (gamesOnly) "No apps are marked as games by Android. Try All apps." else "No matching installed apps are visible in this Android profile.", color = Secondary, fontSize = 13.sp, lineHeight = 20.sp) }
         item {
-            Text("Only package files are copied. Saves, accounts and private app data stay with the original app. Current limit: 512 MB per app.", color = Secondary, fontSize = 11.sp, lineHeight = 18.sp)
+            Text("Apps up to 512 MB. Your saves stay in the original app.", color = Secondary, fontSize = 11.sp, lineHeight = 18.sp)
             TextButton(onClick = onFile, enabled = !state.importing) { Text("Import an APK file instead", fontSize = 12.sp) }
         }
     }
 }
 
 @Composable
-internal fun GameDetailsScreen(game: LocalGame, state: BridgeState, onHost: () -> Unit, onSettings: () -> Unit, onRemove: () -> Unit) {
+internal fun GameDetailsScreen(game: LocalGame, state: BridgeState, onHost: () -> Unit, onRemove: () -> Unit) {
     var expanded by rememberSaveable(game.id) { mutableStateOf(false) }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(22.dp)) {
         item {
@@ -177,26 +133,15 @@ internal fun GameDetailsScreen(game: LocalGame, state: BridgeState, onHost: () -
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(game.title, fontSize = 23.sp, fontWeight = FontWeight.SemiBold)
                     Text("Version ${game.version}", fontSize = 12.sp, color = Secondary)
-                    Text("Saved to your library", fontSize = 11.sp, color = Accent)
+                    Text("${sizeLabel(game.bytes)} stored in Bridge", fontSize = 12.sp, color = Secondary)
                 }
             }
         }
         item {
-            Surface(color = Panel, shape = Rect, border = BorderStroke(1.dp, Line)) {
-                Row(Modifier.fillMaxWidth().padding(18.dp)) {
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) { Text("LIBRARY COPY", fontSize = 10.sp, color = Secondary, letterSpacing = 1.sp); Text(sizeLabel(game.bytes), fontSize = 17.sp, fontWeight = FontWeight.Medium) }
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) { Text("PACKAGE FILES", fontSize = 10.sp, color = Secondary, letterSpacing = 1.sp); Text("${game.apkCount} ${if (game.apkCount == 1) "APK" else "APKs"}", fontSize = 17.sp, fontWeight = FontWeight.Medium) }
-                }
-            }
-        }
-        item {
-            Text("Play with a friend", fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
-            Spacer(Modifier.height(9.dp))
-            Text("Open a private room and share its code. Both players use the app’s existing controls, with text chat alongside the game.", color = Secondary, fontSize = 13.sp, lineHeight = 21.sp)
-            Spacer(Modifier.height(16.dp))
             PrimaryButton("Host this game", !state.busy, Modifier.fillMaxWidth(), onHost)
+            Spacer(Modifier.height(12.dp))
+            Text("Create a private room and share its code with a friend.", color = Secondary, fontSize = 12.sp, lineHeight = 20.sp)
         }
-        if (!state.online || !state.runtimeAvailable) item { ConnectionPanel(state, onSettings) }
         item {
             Row(Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Outlined.Info, null, Modifier.size(19.dp), tint = Secondary); Spacer(Modifier.width(10.dp))
@@ -204,6 +149,7 @@ internal fun GameDetailsScreen(game: LocalGame, state: BridgeState, onHost: () -
                 Icon(if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore, if (expanded) "Hide package details" else "Show package details", tint = Secondary)
             }
             if (expanded) Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(top = 12.dp)) {
+                DetailLine("Package files", "${game.apkCount} ${if (game.apkCount == 1) "APK" else "APKs"}")
                 DetailLine("Package", game.packageName)
                 DetailLine("Android requirement", "API ${game.minSdk} or later")
                 DetailLine("Native libraries", game.abis.joinToString().ifBlank { "None" })
@@ -223,7 +169,6 @@ internal fun SettingsScreen(state: BridgeState, onSave: (String, String) -> Unit
     var name by rememberSaveable(state.name) { mutableStateOf(state.name) }
     var server by rememberSaveable(state.server) { mutableStateOf(state.server) }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(22.dp)) {
-        item { Heading("Settings", "Your name and online connection.") }
         item {
             Text("Player profile", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(12.dp))
@@ -235,7 +180,7 @@ internal fun SettingsScreen(state: BridgeState, onSave: (String, String) -> Unit
                 Text("Online connection", Modifier.weight(1f), fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 IconButton(onClick = onRefresh, enabled = !state.connecting) { Icon(Icons.Outlined.Refresh, "Check connection", tint = Secondary) }
             }
-            Text(if (state.online && state.runtimeAvailable) "Connected · Android session available" else if (state.online) "Connected · Android session unavailable" else if (state.connecting) "Checking connection…" else "Not connected", color = if (state.online) Accent else Secondary, fontSize = 12.sp)
+            Text(if (state.online && state.runtimeAvailable) "Online gameplay ready" else if (state.online) "Room server connected · gameplay service unavailable" else if (state.connecting) "Checking connection…" else "Not connected", color = if (state.online) Accent else Secondary, fontSize = 12.sp)
             Spacer(Modifier.height(16.dp))
             OutlinedTextField(server, { server = it }, label = { Text("Session server") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri), singleLine = true, shape = Rect, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(10.dp))
@@ -244,24 +189,9 @@ internal fun SettingsScreen(state: BridgeState, onSave: (String, String) -> Unit
         item { PrimaryButton("Save & connect", server.isNotBlank(), Modifier.fillMaxWidth()) { onSave(name, server) } }
         item {
             HorizontalDivider(color = Line); Spacer(Modifier.height(18.dp))
-            DetailLine("Bridge", "Native Android · 0.2.0")
+            DetailLine("Bridge", "Native Android · 0.2.1")
             Spacer(Modifier.height(12.dp))
             Text("Chat supports text only. Game video is part of the shared session.", fontSize = 12.sp, lineHeight = 19.sp, color = Secondary)
-        }
-    }
-}
-
-@Composable
-private fun ConnectionPanel(state: BridgeState, onSettings: () -> Unit) {
-    Surface(color = Panel, shape = Rect, border = BorderStroke(1.dp, Line)) {
-        Row(Modifier.fillMaxWidth().clickable(onClick = onSettings).padding(16.dp), verticalAlignment = Alignment.Top) {
-            Icon(if (state.online && state.runtimeAvailable) Icons.Outlined.Wifi else Icons.Outlined.CloudOff, null, Modifier.size(20.dp), tint = Secondary)
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                Text(if (state.online && state.runtimeAvailable) "Ready for online play" else "Online play unavailable", fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                Text(if (state.online && state.runtimeAvailable) "The session server is connected." else if (state.online) "Rooms are connected, but no Android host is available to run a game." else "You can add apps to your library now. A connected session server is needed to play together.", color = Secondary, fontSize = 12.sp, lineHeight = 19.sp)
-                Text("Connection settings", color = Accent, fontSize = 11.sp)
-            }
         }
     }
 }
@@ -287,12 +217,12 @@ private fun SearchField(value: String, onValue: (String) -> Unit, hint: String) 
 
 @Composable
 private fun GameListRow(game: LocalGame, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 18.dp), verticalAlignment = Alignment.CenterVertically) {
         AppIcon(game.packageName, game.id)
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(game.title, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text("${sizeLabel(game.bytes)} · ${if (game.apkCount == 1) "Single APK" else "${game.apkCount} package files"}", fontSize = 11.sp, color = Secondary)
+            Text(sizeLabel(game.bytes), fontSize = 11.sp, color = Secondary)
         }
         Icon(Icons.AutoMirrored.Outlined.ArrowForward, "Game details", Modifier.size(17.dp), tint = Secondary)
     }
@@ -325,4 +255,4 @@ private fun AppIcon(packageName: String, gameId: String? = null, modifier: Modif
 
 @Preview(showBackground = true, widthDp = 390, heightDp = 844)
 @Composable
-private fun PlayPreview() { BridgeTheme { Surface(color = Background) { PlayScreen(BridgeState(connecting = false), {}, {}, {}, {}, {}, {}, {}) } } }
+private fun LibraryPreview() { BridgeTheme { Surface(color = Background) { GameLibraryScreen(BridgeState(connecting = false), {}, {}, {}) } } }

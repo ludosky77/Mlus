@@ -29,11 +29,18 @@ validation on a physical phone.
 The APK import, room upload, Android worker adapter, binary video protocol and
 native viewing/control source are implemented. Node tests exercise real HTTP and
 WebSocket connections with an injected fake Android worker. Protocol tests check
-scrcpy frame parsing and touch routing. The [GitHub Actions build](https://github.com/ludosky77/Mlus/actions/runs/37243718508)
-passed all 14 Node tests, Kotlin compilation, Android lint and debug APK assembly.
-[Download the APK and lint reports](https://github.com/ludosky77/Mlus/actions/runs/37243718508/artifacts/11318661450).
+scrcpy frame parsing and touch routing. The [GitHub Actions build](https://github.com/ludosky77/Mlus/actions/runs/37274699247)
+passed all 19 Node tests, Kotlin compilation, Android lint and debug APK assembly.
+[Download the APK and lint reports](https://github.com/ludosky77/Mlus/actions/runs/37274699247/artifacts/11329658024).
 The artifact expires seven days after this build; the workflow can produce another.
-**Physical-device behavior and real APK execution on the remote host remain unverified.**
+**No execution host is deployed, so online gameplay is unavailable. Physical-device
+behavior and real APK execution remain unverified.**
+
+The latest APK is also saved locally as `artifacts/bridge-debug-0.2.1.apk`. Earlier
+CI builds used different debug signing keys, so this build requires uninstalling
+the older Bridge app first. That clears Bridge’s private library and settings,
+not the original installed games. The workflow now caches an explicit debug key;
+this is development signing, not a permanent release-signing arrangement.
 
 The earlier HTML prototype remains in `public/` and `experiments/html-runtime/`
 for reference. It is excluded from the Android application's assets and dependencies.
@@ -94,6 +101,6 @@ and its GitHub Actions builds. Build results are available in the repository’s
 Actions tab; workflow preparation alone does not establish a successful build.
 
 The native UI still needs review on a real device. Its current styling uses a
-compact dark layout, rectangular controls and a consistent outlined icon set.
+dark layout with flat lists, rectangular controls and a consistent outlined icon set.
 The debug manifest allows local HTTP development; internet deployment requires
 HTTPS/WSS and a production network configuration.

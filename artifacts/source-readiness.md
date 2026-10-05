@@ -1,66 +1,56 @@
 # APK bridge build and source status
 
-Date: 2026-10-04. The first native debug APK builds successfully; runtime and device
-validation are still outstanding.
+Date: 2026-10-05. Version 0.2.1 builds successfully. No execution host is deployed;
+online gameplay and physical-device validation remain outstanding.
 
 Implemented:
 
-- Kotlin/Compose APK library with bounded import, SHA-256 deduplication, package
-  requirements and signing metadata; native room UI and text-only chat.
-- Authenticated per-room APK upload, size/hash enforcement and temporary-file cleanup.
-- Opt-in disposable emulator adapter: SDK/ABI checks, APK installation, automatic
-  launcher resolution, scrcpy 4.0 video and control transport, teardown.
-- Native H.264 decoding and normalized multi-touch with separate player pointer IDs.
-- HTML assets and WebKit dependency removed from the Android app; previous assets
-  preserved in experiments/html-runtime/.
-- Source and manual GitHub Actions workflow published to
-  https://github.com/ludosky77/Mlus. SDK setup explicitly selects platform-tools
-  because the setup action’s default legacy tools package is no longer available.
-  Execution-host deployment remains outstanding.
+- Native Kotlin/Compose Library / Rooms / Settings navigation. Flat library rows,
+  actual app icons, fewer secondary details, clear Host and Join actions, and
+  connection explanations in the relevant room/settings flow.
+- Installed-app picker with search and All apps / Games filters. Copies the base
+  APK and installed splits directly; no external extractor is needed. Android
+  launcher-intent visibility is used without QUERY_ALL_PACKAGES or storage access.
+- Import progress/cancellation, bounded copying, SHA-256 deduplication, package
+  metadata, package-update detection, atomic library commits and private-copy removal.
+- Authenticated room upload, size/hash enforcement and temporary-file cleanup.
+- Opt-in disposable emulator adapter with SDK/ABI checks, base/split installation,
+  automatic launcher resolution, scrcpy 4.0 video/control transport and teardown.
+- Native H.264 decoding, separate player pointer IDs and text-only room chat.
+- Legacy HTML experiments remain outside the Android app.
 
-Verified locally without Android tools:
+Verified:
 
-- JavaScript syntax checks.
-- 14 Node tests: room membership/chat, upload authorization/size/hash, failed startup,
-  cancellation, temporary-file deletion, stream restart/subscription, input roles, fragmented
-  video parsing, pointer separation, invalid input and stuck-touch expiry.
-- Android resource XML and workflow YAML parse; lockfile dependencies match.
-- The relocated legacy HTML harness also passes; it is separate from product validation.
-- Execution tests use a fake Android worker. Protocol tests use constructed packets.
-  They do not execute an APK, ADB, Gradle, an emulator or a native decoder.
+- Local JavaScript checks and 19 Node tests. Coverage includes room/chat/upload
+  behavior, cancellation/cleanup, video parsing, pointer routing and validated
+  split archives with package/version consistency checks.
+- [GitHub Actions run 37274699247](https://github.com/ludosky77/Mlus/actions/runs/37274699247)
+  passed at source commit `5720e9ec81b0b06fc059207b13fa57275ef53e45`: all 19 Node
+  tests, Kotlin compilation, `:app:lintDebug` and `:app:assembleDebug`.
+- Lint: zero errors and 16 warnings. These are not suppressed.
+- Downloaded artifact SHA-256 matches GitHub’s digest. Archive and APK ZIP
+  integrity checks pass. APK: `artifacts/bridge-debug-0.2.1.apk`, 18,828,883 bytes;
+  `artifacts/bridge-debug.apk` is the same build. Provenance and checksums are in
+  `build-result.json`.
+- The workflow explicitly creates and caches its debug signing key. The run log
+  confirms the cache was saved. Earlier builds have different signing certificates;
+  installing this build requires removing the old Bridge installation first,
+  clearing its private copies/settings but not the original installed games.
+- No Android build, emulator, ADB command or installation ran on this phone.
 
-Verified on GitHub’s Ubuntu runner:
+Limits and outstanding work:
 
-- [Run 37243718508](https://github.com/ludosky77/Mlus/actions/runs/37243718508) passed
-  at source commit `8a09f1407d436e401c22d5d60e8fecacda74f7f9`.
-- All 14 Node tests, Kotlin compilation, `:app:lintDebug` and `:app:assembleDebug`.
-- Lint reported no errors, 12 warnings and one hint. Warnings cover dependency/API
-  updates, style and optional Android configuration; they are not suppressed.
-- The debug APK was downloaded to `artifacts/bridge-debug.apk` (18,763,295 bytes).
-  The artifact SHA-256 matches GitHub’s digest, and the APK ZIP structure passes
-  integrity checks. See `build-result.json` for provenance and the APK checksum.
-- No Android build or installation ran on this phone during this work.
+- Tests use a fake Android worker and synthetic protocol/package fixtures. They
+  do not validate real APK execution, native decoding or device import behavior.
+- The supplied VPS still timed out before SSH login on 2026-10-05. No Android
+  execution host is deployed. A reachable endpoint is needed to inspect its
+  suitability and provision a host before two-device gameplay can be tested.
+- Layout, import and cancellation need physical-device review; the revised design
+  has not been approved by the user.
+- Installed splits match the source phone. Copying does not include saved data,
+  accounts, external asset packs or alternative CPU architectures.
+- Audio, controller mapping, clean emulator provisioning, production isolation,
+  accounts, ads, latency/cost measurements and release distribution remain unfinished.
 
-Outstanding:
-
-- Actual execution-host deployment and end-to-end testing with real APKs and phones.
-- Native layout review and user approval of the design.
-- Audio, external asset packs, controller mapping, clean emulator provisioning, production
-  isolation, accounts, ads, latency/cost measurement and production distribution.
-
-Compatibility is requirement-based, not tied to named games. Shared execution cannot
-create multiplayer game logic that an application does not already contain.
-
-Version 0.2.1 source changes:
-
-- Library / Rooms / Settings navigation; visible Host and Join actions; actionable
-  offline state; native installed-app picker with real app icons and search.
-- Launcher-intent package visibility, with no QUERY_ALL_PACKAGES or storage permission.
-- Direct base/split extraction, import progress and cancellation, package details,
-  private-copy deletion, package-update detection and atomic library commits.
-- Host-side split-set extraction and install-multiple support, validated by 19 Node
-  tests. APK signatures are still validated by Android at installation time.
-- The installed-app implementation passed remote compilation and lint in
-  [run 37245548339](https://github.com/ludosky77/Mlus/actions/runs/37245548339).
-- A further UI pass removes dashboard cards and secondary metadata from lists.
-  Its remote build and physical-device import/layout review remain pending.
+Compatibility depends on package requirements. Shared execution uses existing
+controls and cannot create multiplayer logic missing from an application.

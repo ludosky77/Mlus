@@ -2,7 +2,9 @@
 
 This adapter is source code awaiting validation against a real remote emulator.
 Do not run these tools on the user's Termux phone. The previously supplied SSH
-endpoint did not complete its handshake; no execution host has been deployed.
+endpoint still timed out before its SSH login on 2026-10-05; no execution host
+has been deployed. An updated or reachable SSH endpoint is needed to continue
+host inspection and provisioning.
 
 ## Architecture
 
@@ -75,7 +77,7 @@ private to the execution machine. No production deployment has been performed.
 ## Validation still required
 
 - Install the compiled debug client on two devices. Remote Kotlin compilation and
-  Android lint passed in [Actions](https://github.com/ludosky77/Mlus/actions/runs/37243718508);
+  Android lint passed in [Actions](https://github.com/ludosky77/Mlus/actions/runs/37274699247);
   this does not validate emulator execution or native device behavior.
 - Import both an APK with native libraries and one without them; check metadata,
   duplicate imports and cancellation without corrupting the local library.
